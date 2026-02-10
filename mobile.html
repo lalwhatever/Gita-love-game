@@ -1,0 +1,2650 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Valentine Quest - Mobile</title>
+<style>
+:root {
+    --pink-light: #ffe6f2;
+    --pink-mid: #ff99cc;
+    --pink-deep: #ff3399;
+    --pink-dark: #b30059;
+}
+
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000; /* Black bars */
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.health-container {
+    position: absolute;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+}
+
+#player-ui { left: 20px; }
+#boss-ui { right: 20px; }
+
+.label {
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 0px black;
+    font-size: 18px;
+    margin-bottom: 5px;
+    text-align: right;
+    min-width: 200px;
+}
+
+.health-bar-outer {
+    width: 220px;
+    height: 24px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid white;
+    border-radius: 12px;
+    padding: 3px;
+}
+
+.health-bar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.2s ease-out;
+    box-shadow: 0 0 10px var(--pink-mid);
+    background: linear-gradient(90deg, #ff0066, #ff66b2);
+}
+
+.health-bar-outer:has(#player-hp) {
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #ff0066;
+}
+
+#player-hp.health-bar-inner {
+    background: linear-gradient(90deg, #ff0066, #ff99cc);
+}
+
+#boss-hp .health-bar-inner {
+    background: linear-gradient(90deg, white, var(--pink-mid));
+    box-shadow: 0 0 10px white;
+}
+
+#powerup-bar-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+}
+
+#powerup-name {
+    color: #ffeb3b;
+    font-weight: bold;
+    text-shadow: 2px 2px 0px #000;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+#powerup-bar-outer {
+    width: 300px;
+    height: 16px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #ffeb3b;
+    border-radius: 8px;
+    padding: 2px;
+    display: none;
+}
+
+#powerup-bar-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #ffeb3b, #ff9900);
+    border-radius: 4px;
+    transition: width 0.1s linear;
+}
+
+#message-overlay {
+    display: none;
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    pointer-events: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+#message-overlay.active {
+    display: flex;
+}
+
+.card {
+    background: rgba(42, 26, 58, 0.95);
+    border: 2px solid #d4af37;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+    max-height: none;
+    margin: auto;
+    position: relative;
+    color: #f0e6d2;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: visible;
+}
+
+@keyframes popIn { 
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.wise-man-portrait {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #d4af37;
+    margin: 0 auto 15px;
+    background: linear-gradient(135deg, #4a3a2a, #2a1a0a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    box-shadow: 0 0 20px rgba(212,175,55,0.3);
+    flex-shrink: 0;
+}
+
+.card h1 { 
+    color: #d4af37; 
+    font-size: 1.6em; 
+    margin: 0 0 15px 0; 
+    font-family: Georgia, serif; 
+    line-height: 1.2;
+}
+
+.card .dialogue { 
+    color: #e6dcc3; 
+    font-size: 1.1em; 
+    line-height: 1.5; 
+    margin: 15px 0; 
+    font-style: italic; 
+}
+
+.card .advice { 
+    color: #a8c8ec; 
+    font-size: 1em; 
+    margin: 15px 0; 
+    padding: 15px; 
+    background: rgba(0,0,0,0.3); 
+    border-radius: 10px; 
+    border-left: 3px solid #d4af37; 
+}
+
+.card .boss-intro { 
+    color: #ff9999; 
+    font-size: 1em; 
+    margin: 15px 0; 
+    font-weight: bold; 
+    line-height: 1.4;
+}
+
+button, .btn {
+    padding: 18px 36px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin: 15px 5px;
+    font-family: inherit;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 60px;
+    position: relative;
+    z-index: 10;
+}
+
+.next-btn { 
+    background: linear-gradient(to bottom, #d4af37, #b8941f); 
+    color: #1a0a0a; 
+    border: 2px solid #f0d878;
+    box-shadow: 0 5px 15px rgba(212,175,55,0.3);
+    width: 100%;
+    max-width: 300px;
+    display: block;
+    margin: 20px auto;
+}
+.next-btn:active { 
+    transform: scale(0.95); 
+    background: linear-gradient(to bottom, #b8941f, #d4af37);
+}
+
+#btn-yes {
+    background: linear-gradient(to bottom, #ff66b2, #cc0066);
+    color: white;
+    box-shadow: 0 5px 15px rgba(255, 51, 153, 0.4);
+}
+
+#btn-no {
+    background: #eee;
+    color: #333;
+}
+
+.shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake {
+    10%, 90% { transform: translate3d(-4px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+    40%, 60% { transform: translate3d(8px, 0, 0); }
+}
+
+#dev-menu {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #0f0;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000;
+    color: #0f0;
+    font-family: monospace;
+    font-size: 13px;
+    pointer-events: auto;
+    box-shadow: 0 4px 15px rgba(0,255,0,0.3);
+    max-width: 250px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+#dev-menu h3 { margin: 0 0 12px 0; font-size: 16px; color: #fff; text-transform: uppercase; border-bottom: 1px solid #0f0; padding-bottom: 5px; }
+.dev-btn { display: block; width: 100%; margin: 6px 0; padding: 10px; font-size: 12px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px; cursor: pointer; text-align: left; touch-action: manipulation; }
+.dev-btn:active { background: #333; border-color: #0f0; color: #0f0; }
+.dev-btn.skip { color: #ff6666; border-color: #ff6666; }
+.dev-btn.phase { color: #66ccff; border-color: #66ccff; }
+.dev-btn.toggle { color: #ffcc00; border-color: #ffcc00; }
+.dev-btn.active { background: #ffcc00; color: black; }
+.status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #333; margin-right: 8px; }
+.status-indicator.on { background: #0f0; box-shadow: 0 0 5px #0f0; }
+
+/* Mobile Controls - Fixed at screen edges */
+#mobile-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    height: 140px;
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 20px 20px 20px;
+    box-sizing: border-box;
+}
+
+.d-pad {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    pointer-events: auto;
+}
+
+.d-btn {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: all 0.1s;
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+
+.d-btn:active, .d-btn.active {
+    background: rgba(255, 102, 178, 0.6);
+    border-color: #ff66b2;
+    transform: scale(0.95);
+}
+
+.d-up { top: 0; left: 47.5px; }
+.down { bottom: 0; left: 47.5px; }
+.d-left { top: 47.5px; left: 0; }
+.d-right { top: 47.5px; right: 0; }
+
+.fire-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ff66b2, #cc0066);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 5px 20px rgba(204, 0, 102, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    pointer-events: auto;
+    touch-action: manipulation;
+    margin-bottom: 10px;
+    margin-right: 10px;
+}
+
+.fire-btn:active, .fire-btn.active {
+    transform: scale(0.92);
+    background: radial-gradient(circle at 30% 30%, #ff3399, #99004d);
+}
+
+.back-btn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 101;
+    background: rgba(0,0,0,0.7);
+    color: #ff66b2;
+    border: 2px solid #ff66b2;
+    padding: 10px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    touch-action: manipulation;
+}
+
+#orientation-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1a050d;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #ff66b2;
+    text-align: center;
+    padding: 20px;
+}
+
+#orientation-warning .icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+    animation: rotatePhone 2s infinite;
+}
+
+@keyframes rotatePhone {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+}
+
+@media (orientation: portrait) {
+    #orientation-warning {
+        display: flex;
+    }
+    #gameCanvas, #mobile-controls, #ui-layer {
+        display: none !important;
+    }
+}
+
+@media (max-height: 600px) {
+    .card { padding: 20px; }
+    .wise-man-portrait { width: 80px; height: 80px; font-size: 40px; }
+    .card h1 { font-size: 1.4em; }
+    button { padding: 15px 30px; min-height: 50px; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-btn">← Back</a>
+
+<div id="orientation-warning">
+    <div class="icon">📱</div>
+    <h2>Please Rotate Your Device</h2>
+    <p>This game works best in landscape mode</p>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="dev-menu">
+    <h3>⚡ Dev Menu</h3>
+    <button class="dev-btn skip" onclick="devSkip()">⚡ Skip Boss (Win)</button>
+    <button class="dev-btn phase" onclick="devSetPhase(1)">1: Stormcloud</button>
+    <button class="dev-btn phase" onclick="devSetPhase(2)">2: BPD Brain</button>
+    <button class="dev-btn phase" onclick="devSetPhase(3)">3: Nordic Man</button>
+    <button class="dev-btn phase" onclick="devSetPhase(4)">4: Victory</button>
+    <button class="dev-btn toggle" id="btn-slow" onclick="devToggleSlow()"><span class="status-indicator" id="ind-slow"></span>Slow Motion (0.3x)</button>
+    <button class="dev-btn toggle" id="btn-invuln" onclick="devToggleInvuln()"><span class="status-indicator" id="ind-invuln"></span>Invulnerability</button>
+    <div style="margin-top: 15px; font-size: 10px; color: #666; text-align: center;">Press ` to toggle menu</div>
+</div>
+
+<div id="ui-layer">
+    <div class="health-container" id="player-ui">
+        <div class="label">💖 Gita's Love</div>
+        <div class="health-bar-outer">
+            <div class="health-bar-inner" id="player-hp" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <div class="health-container" id="boss-ui">
+        <div class="label" id="boss-name">☁️ My Little Stormcloud</div>
+        <div class="health-bar-outer" id="boss-hp">
+            <div class="health-bar-inner" id="boss-hp-bar" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <div id="powerup-bar-container">
+        <div id="powerup-name">No Power-up</div>
+        <div id="powerup-bar-outer">
+            <div id="powerup-bar-inner" style="width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="mobile-controls">
+    <div class="d-pad">
+        <div class="d-btn d-up" data-key="ArrowUp">▲</div>
+        <div class="d-btn down" data-key="ArrowDown">▼</div>
+        <div class="d-btn d-left" data-key="ArrowLeft">◀</div>
+        <div class="d-btn d-right" data-key="ArrowRight">▶</div>
+    </div>
+    <div class="fire-btn" id="fire-btn">💝</div>
+</div>
+
+<div id="message-overlay">
+    <div class="card" id="card-content">
+    </div>
+</div>
+
+<script>
+// ==========================================
+// GAME CONFIGURATION - FULL GAME FROM DESKTOP
+// ==========================================
+const GAME_CONFIG = {
+    playerSpeed: 6,
+    playerMaxHp: 100,
+    playerSize: 80,
+    bossSpeed: 2,
+    bossHp: 100,
+    cloudLightningRate: 100,
+    cloudRainRate: 150,
+    cloudShockwaveRate: 350,
+    cloudSunlightRate: 350,
+    lightningDamage: 12,
+    cloudAttackCooldown: 90,
+    brainSpiralRate: 40,
+    brainBurstRate: 150,
+    brainOverwhelmRate: 350,
+    brainTherapyRate: 350,
+    brainWordDamage: 10,
+    brainAttackCooldown: 250,
+    manMoneyRate: 40,
+    manSarcasmRate: 70,
+    manNerdyRate: 90,
+    manSnowballRate: 20,
+    manLoveRate: 450,
+    manRazorRate: 450,
+    manDamage: 25,
+    manAttackCooldown: 25,
+    lipstickSlowDuration: 480,
+    enemyBulletSpeed: 4.0,
+    playerBulletDamage: 2,
+};
+
+const PHASE = { START: 0, CLOUD: 1, BRAIN: 2, MAN: 3, WIN: 4, LOSS: -1, ENDING: 5, DIALOGUE: 6, REJECTED: 7 };
+
+const WISE_MAN_DIALOGUES = {
+    1: {
+        title: "ALLAH",
+        dialogue: "Young one, you seek to win love. But first, you must weather the storm that clouds your own heart.",
+        advice: "Remember: even the darkest storm cannot last forever. Sometimes you must wait for the sun to shine through, to see what has been there all along. Patience reveals truth. Only sunlight can dispel the shadows.",
+        bossName: "My Little Stormcloud",
+        bossDesc: "A manifestation of doubt and uncertainty. It will strike fast with lightning, but its fury is fleeting. Wait for the sunlight to strike back!",
+        emoji: "🧙‍♂️"
+    },
+    2: {
+        title: "ALLAH",
+        dialogue: "The storm has cleared, but now a greater enemy rises from within. The mind can be your worst adversary.",
+        advice: "Thoughts are not truths. When the brain speaks lies, listen for the whispers of wisdom that counter them. Catch the good words, let the bad ones pass through you like wind.",
+        bossName: "The Overthinking Brain",
+        bossDesc: "It spins webs of anxiety and doubt. It will try to convince you that you are not enough. Do not believe its lies.",
+        emoji: "🧙‍♂️"
+    },
+    3: {
+        title: "ALLAH",
+        dialogue: "You have conquered doubt and quieted the mind. Now face the final barrier: the fear of vulnerability itself.",
+        advice: "Words can wound, or they can heal. Even the coldest argument carries warmth beneath. Look past the sarcasm, beyond the logic, to find the beating heart beneath the snow.",
+        bossName: "The Bearded Argument",
+        bossDesc: "Pride and fear given form. He throws words like weapons, but secretly yearns to be understood. Show him compassion—or use seduction as a tool of distraction to lower his defenses.",
+        emoji: "🧙‍♂️"
+    }
+};
+
+const POWERUP_TYPES = {
+    NONE: 'none',
+    SUNLIGHT: 'sunlight',
+    THERAPY: 'therapy',
+    LOVE_LETTER: 'love',
+    SEXY_CHARACTER: 'sexy',
+    BANDAGE: 'bandage'
+};
+
+const therapyWords = [
+    "You are valuable", "You are smart", "You are enough", "You matter",
+    "You are loved", "You are worthy", "You can do this", "Believe in yourself",
+    "You are strong", "You are resilient", "You are beautiful", "You are kind"
+];
+
+const loveLetters = [
+    "You are beautiful", "You are kind", "I love you", "You light up my life",
+    "You are perfect", "My heart is yours", "You are my everything"
+];
+
+const negativeThoughts = [
+    "Not good enough", "I'm a fraud", "Everyone judges me", "I don't deserve love",
+    "I'm too much", "I'm not enough", "They'll leave me", "I'm broken",
+    "What if I fail?", "Nothing lasts", "It will get worse", "I'll be alone",
+    "Future is empty", "I can't handle it", "Something bad is coming",
+    "Pointless", "Why try?", "Always my fault", "Too sensitive",
+    "I'm a burden", "I'm unlovable", "I mess everything up", "I'm worthless"
+];
+
+const sarcasticComments = [
+    "Manipulative", "BPD", "Muslims are bad", "Materalistic",
+    "Atheism", "Beards", "No sugar'", "Scam"
+];
+
+const nerdyComments = [
+    "Ackchyually...", "Well, technically...", "Um, actually...", 
+    "According to my calculations...", "That's suboptimal", 
+    "Have you read the manual?", "I prefer the original", "Math checks out... not"
+];
+
+// ==========================================
+// MOBILE TOUCH CONTROLS
+// ==========================================
+const touchKeys = {
+    ArrowUp: false,
+    ArrowDown: false,
+    ArrowLeft: false,
+    ArrowRight: false,
+    Space: false
+};
+
+function setupMobileControls() {
+    const dButtons = document.querySelectorAll('.d-btn');
+    const fireBtn = document.getElementById('fire-btn');
+    
+    dButtons.forEach(btn => {
+        const key = btn.dataset.key;
+        
+        const startTouch = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            touchKeys[key] = true;
+            btn.classList.add('active');
+        };
+        
+        const endTouch = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            touchKeys[key] = false;
+            btn.classList.remove('active');
+        };
+        
+        btn.addEventListener('touchstart', startTouch, {passive: false});
+        btn.addEventListener('touchend', endTouch, {passive: false});
+        btn.addEventListener('touchcancel', endTouch, {passive: false});
+        btn.addEventListener('mousedown', startTouch);
+        btn.addEventListener('mouseup', endTouch);
+        btn.addEventListener('mouseleave', endTouch);
+    });
+    
+    const startFire = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        touchKeys.Space = true;
+        fireBtn.classList.add('active');
+        if (gameActive && gamePhase !== PHASE.START && gamePhase !== PHASE.WIN && gamePhase !== PHASE.ENDING && gamePhase !== PHASE.DIALOGUE && gamePhase !== PHASE.REJECTED) {
+            shootBullet();
+        }
+    };
+    
+    const endFire = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        touchKeys.Space = false;
+        fireBtn.classList.remove('active');
+    };
+    
+    fireBtn.addEventListener('touchstart', startFire, {passive: false});
+    fireBtn.addEventListener('touchend', endFire, {passive: false});
+    fireBtn.addEventListener('touchcancel', endFire, {passive: false});
+    fireBtn.addEventListener('mousedown', startFire);
+    fireBtn.addEventListener('mouseup', endFire);
+    fireBtn.addEventListener('mouseleave', endFire);
+    
+    document.addEventListener('touchmove', (e) => {
+        if (e.target.closest('#mobile-controls') || e.target.closest('.d-pad') || e.target.closest('.fire-btn')) {
+            e.preventDefault();
+        }
+    }, {passive: false});
+    
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, {passive: false});
+}
+
+function shootBullet() {
+    let options = {};
+    if (currentPowerup === POWERUP_TYPES.SUNLIGHT) options.big = true;
+    else if (currentPowerup === POWERUP_TYPES.THERAPY) options.autoAim = true;
+    else if (currentPowerup === POWERUP_TYPES.LOVE_LETTER) { options.razor = true; options.big = true; }
+
+    bullets.push(new Bullet(player.x + player.w/2, player.y, true, 'player', options));
+    playSound('shoot');
+}
+
+// ==========================================
+// GAME STATE
+// ==========================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+let frames = 0;
+let timeScale = 1.0;
+let devInvulnerable = false;
+
+let gamePhase = PHASE.START;
+let gameActive = false;
+
+let currentPowerup = POWERUP_TYPES.NONE;
+let powerupTimer = 0;
+let powerupDuration = 0;
+let lipstickTimeScale = 1.0;
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'shoot') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(); osc.stop(now + 0.1);
+    } else if (type === 'lightning') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(); osc.stop(now + 0.3);
+    } else if (type === 'hit') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(); osc.stop(now + 0.2);
+    } else if (type === 'win') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.15);
+        osc.frequency.setValueAtTime(783.99, now + 0.3);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.6);
+        osc.start(); osc.stop(now + 0.6);
+    } else if (type === 'powerup') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(880, now + 0.1);
+        osc.frequency.setValueAtTime(1320, now + 0.2);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(); osc.stop(now + 0.4);
+    } else if (type === 'heal') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(); osc.stop(now + 0.3);
+    } else if (type === 'sad') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(200, now + 0.3);
+        osc.frequency.linearRampToValueAtTime(150, now + 0.6);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.8);
+        osc.start(); osc.stop(now + 0.8);
+    } else if (type === 'bounce') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(); osc.stop(now + 0.15);
+    }
+}
+
+// ==========================================
+// PLAYER
+// ==========================================
+const player = {
+    x: 0, y: 0, w: GAME_CONFIG.playerSize, h: GAME_CONFIG.playerSize, 
+    speed: GAME_CONFIG.playerSpeed, hp: GAME_CONFIG.playerMaxHp, 
+    maxHp: GAME_CONFIG.playerMaxHp, color: '#ff0066',
+    update: function() {
+        let s = this.speed * timeScale * lipstickTimeScale;
+        if ((keys.ArrowLeft || touchKeys.ArrowLeft) && this.x > 0) this.x -= s;
+        if ((keys.ArrowRight || touchKeys.ArrowRight) && this.x < width - this.w) this.x += s;
+        if ((keys.ArrowUp || touchKeys.ArrowUp) && this.y > 0) this.y -= s;
+        if ((keys.ArrowDown || touchKeys.ArrowDown) && this.y < height - this.h) this.y += s;
+        this.y += Math.sin(frames * 0.05) * 0.5 * timeScale * lipstickTimeScale;
+    },
+    draw: function() {
+        ctx.save();
+        ctx.translate(this.x + this.w/2, this.y + this.h/2);
+
+        if (currentPowerup !== POWERUP_TYPES.NONE) {
+            ctx.shadowColor = currentPowerup === POWERUP_TYPES.SUNLIGHT ? '#ffeb3b' :
+                             currentPowerup === POWERUP_TYPES.THERAPY ? '#cc66ff' :
+                             currentPowerup === POWERUP_TYPES.LOVE_LETTER ? '#ff0066' :
+                             currentPowerup === POWERUP_TYPES.SEXY_CHARACTER ? '#ff1493' : '#fff';
+            ctx.shadowBlur = 20;
+        }
+
+        const s = 3.0;
+        ctx.beginPath();
+        ctx.moveTo(0, 3*s);
+        ctx.bezierCurveTo(0, 2.5*s, -5*s, 0, -5*s, -3*s);
+        ctx.bezierCurveTo(-5*s, -6*s, 0, -6*s, 0, -4*s);
+        ctx.bezierCurveTo(0, -6*s, 5*s, -6*s, 5*s, -3*s);
+        ctx.bezierCurveTo(5*s, 0, 0, 2.5*s, 0, 3*s);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+};
+
+// ==========================================
+// CLASSES - ALL FROM DESKTOP VERSION
+// ==========================================
+class PowerUp {
+    constructor(x, y, type, text) {
+        this.x = x; this.y = y; this.type = type; this.text = text || null;
+        this.w = 50; this.h = 50; this.vy = 1.5; this.vx = 0;
+        this.markedForDeletion = false; this.pulse = 0;
+    }
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.y += this.vy * ts; this.pulse += 0.1 * ts;
+        this.vx = Math.sin((Date.now() / 500) + this.y * 0.01) * 0.8;
+        this.x += this.vx * ts;
+        if (this.y > height + 50) this.markedForDeletion = true;
+    }
+    draw() {
+        ctx.save();
+        let glowSize = 15 + Math.sin(this.pulse) * 5;
+        ctx.shadowBlur = glowSize;
+        switch(this.type) {
+            case POWERUP_TYPES.SUNLIGHT:
+                ctx.fillStyle = '#ffeb3b'; ctx.shadowColor = '#ff9900';
+                ctx.beginPath(); ctx.arc(this.x + 25, this.y + 25, 20, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 3;
+                for(let i = 0; i < 8; i++) {
+                    let angle = (i / 8) * Math.PI * 2 + this.pulse * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 25 + Math.cos(angle) * 22, this.y + 25 + Math.sin(angle) * 22);
+                    ctx.lineTo(this.x + 25 + Math.cos(angle) * 30, this.y + 25 + Math.sin(angle) * 30);
+                    ctx.stroke();
+                }
+                break;
+            case POWERUP_TYPES.THERAPY:
+                ctx.fillStyle = '#66ff99'; ctx.shadowColor = '#00cc66';
+                ctx.beginPath();
+                ctx.moveTo(this.x + 25, this.y + 35);
+                ctx.bezierCurveTo(this.x + 25, this.y + 30, this.x + 10, this.y + 20, this.x + 10, this.y + 10);
+                ctx.bezierCurveTo(this.x + 10, this.y, this.x + 20, this.y, this.x + 25, this.y + 8);
+                ctx.bezierCurveTo(this.x + 30, this.y, this.x + 40, this.y, this.x + 40, this.y + 10);
+                ctx.bezierCurveTo(this.x + 40, this.y + 20, this.x + 25, this.y + 30, this.x + 25, this.y + 35);
+                ctx.fill();
+                if (this.text) {
+                    ctx.fillStyle = '#006622'; ctx.font = 'bold 9px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    const maxWidth = 46;
+                    const words = this.text.split(' ');
+                    let line = '';
+                    let lines = [];
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        const metrics = ctx.measureText(testLine);
+                        const testWidth = metrics.width;
+                        if (testWidth > maxWidth && n > 0) {
+                            lines.push(line);
+                            line = words[n] + ' ';
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line);
+                    const lineHeight = 10;
+                    const startY = this.y + 20 - ((lines.length - 1) * lineHeight) / 2;
+                    for (let k = 0; k < lines.length; k++) {
+                        ctx.fillText(lines[k], this.x + 25, startY + (k * lineHeight));
+                    }
+                }
+                break;
+            case POWERUP_TYPES.LOVE_LETTER:
+                ctx.fillStyle = '#ff66b2'; ctx.shadowColor = '#ff0066';
+                ctx.fillRect(this.x + 5, this.y + 15, 40, 30);
+                ctx.fillStyle = '#ff3399';
+                ctx.beginPath(); ctx.moveTo(this.x + 5, this.y + 15); ctx.lineTo(this.x + 25, this.y + 30); ctx.lineTo(this.x + 45, this.y + 15); ctx.fill();
+                ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(this.x + 25, this.y + 30, 6, 0, Math.PI * 2); ctx.fill();
+                break;
+            case POWERUP_TYPES.SEXY_CHARACTER:
+                ctx.fillStyle = '#ff1493'; ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 25;
+                ctx.beginPath(); ctx.arc(this.x + 25, this.y + 25, 22, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255, 20, 147, 0.3)'; ctx.fill();
+                ctx.fillStyle = '#ff0066'; ctx.shadowBlur = 15;
+                ctx.beginPath(); ctx.moveTo(this.x + 10, this.y + 28); ctx.quadraticCurveTo(this.x + 18, this.y + 15, this.x + 25, this.y + 20); ctx.quadraticCurveTo(this.x + 32, this.y + 15, this.x + 40, this.y + 28); ctx.quadraticCurveTo(this.x + 32, this.y + 25, this.x + 25, this.y + 28); ctx.quadraticCurveTo(this.x + 18, this.y + 25, this.x + 10, this.y + 28); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(this.x + 10, this.y + 28); ctx.quadraticCurveTo(this.x + 18, this.y + 40, this.x + 25, this.y + 42); ctx.quadraticCurveTo(this.x + 32, this.y + 40, this.x + 40, this.y + 28); ctx.quadraticCurveTo(this.x + 32, this.y + 32, this.x + 25, this.y + 30); ctx.quadraticCurveTo(this.x + 18, this.y + 32, this.x + 10, this.y + 28); ctx.fill();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath(); ctx.ellipse(this.x + 20, this.y + 22, 4, 2, -0.3, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(this.x + 30, this.y + 22, 3, 1.5, 0.3, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ff69b4';
+                let kissX = this.x + 35 + Math.sin(this.pulse) * 3;
+                let kissY = this.y + 10 + Math.cos(this.pulse) * 2;
+                ctx.beginPath(); ctx.moveTo(kissX, kissY); ctx.quadraticCurveTo(kissX - 2, kissY - 3, kissX - 4, kissY); ctx.quadraticCurveTo(kissX - 2, kissY + 2, kissX, kissY); ctx.quadraticCurveTo(kissX + 2, kissY + 2, kissX + 4, kissY); ctx.quadraticCurveTo(kissX + 2, kissY - 3, kissX, kissY); ctx.fill();
+                ctx.fillStyle = '#ffeb3b';
+                for(let i = 0; i < 3; i++) {
+                    let sx = this.x + 15 + (i * 10) + Math.sin(this.pulse + i) * 3;
+                    let sy = this.y + 40 + Math.cos(this.pulse + i) * 3;
+                    ctx.beginPath(); ctx.arc(sx, sy, 2, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial'; ctx.textAlign = 'center'; ctx.fillText('DISTRACT', this.x + 25, this.y + 48);
+                break;
+            case POWERUP_TYPES.BANDAGE:
+                ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#cccccc';
+                ctx.fillRect(this.x + 10, this.y + 20, 30, 20);
+                ctx.fillStyle = '#ff6666';
+                ctx.fillRect(this.x + 22, this.y + 15, 6, 30);
+                ctx.fillRect(this.x + 10, this.y + 27, 30, 6);
+                break;
+        }
+        ctx.restore();
+    }
+    checkHit(rect) {
+        return (this.x < rect.x + rect.w && this.x + this.w > rect.x && this.y < rect.y + rect.h && this.y + this.h > rect.y);
+    }
+}
+
+class Bullet {
+    constructor(x, y, isPlayer, type, options = {}) {
+        this.x = x; this.y = y; this.isPlayer = isPlayer; this.type = type;
+        this.markedForDeletion = false; this.options = options || {};
+        if (isPlayer) {
+            this.radius = this.options.big ? 14 : 5; this.vx = 0; this.vy = this.options.fast ? -15 : -10;
+            this.color = this.options.big ? '#ffeb3b' : '#ff66b2';
+            this.damage = this.options.big ? GAME_CONFIG.playerBulletDamage * 4 : GAME_CONFIG.playerBulletDamage;
+            this.isRazor = this.options.razor || false; this.autoAim = this.options.autoAim || false; this.life = 180;
+        } else {
+            if (type === 'cloud') { this.radius = 8; this.color = '#4da6ff'; }
+            if (type === 'brain') { this.radius = 4; this.color = '#cc66ff'; }
+            if (type === 'man') { this.radius = 6; this.w = 15; this.h = 5; this.color = '#fff'; }
+        }
+    }
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        if (this.isPlayer && this.autoAim && currentBoss) {
+            let dx = (currentBoss.x + currentBoss.w/2) - this.x;
+            let dy = (currentBoss.y + currentBoss.h/2) - this.y;
+            let angle = Math.atan2(dy, dx);
+            this.vx = Math.cos(angle) * 8; this.vy = Math.sin(angle) * 8;
+        }
+        this.x += (this.vx || 0) * ts; this.y += (this.vy || 0) * ts;
+        if (this.isPlayer) this.life -= ts;
+        if (this.y < -50 || this.y > height + 50 || this.x < -50 || this.x > width + 50 || this.life <= 0) this.markedForDeletion = true;
+    }
+    draw() {
+        ctx.save(); ctx.fillStyle = this.color;
+        if (this.isRazor) {
+            ctx.translate(this.x, this.y); ctx.rotate(Math.atan2(this.vy, this.vx) + Math.PI/2);
+            ctx.fillStyle = '#c0c0c0'; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 10;
+            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(8, 10); ctx.lineTo(0, 5); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#666'; ctx.lineWidth = 1; ctx.stroke();
+        } else if (this.options && this.options.big) {
+            ctx.shadowColor = '#ffeb3b'; ctx.shadowBlur = 15;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2); ctx.fill();
+        } else {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+class Boss {
+    constructor() {
+        this.w = 100; this.h = 100; this.x = width/2 - 50; this.y = 60;
+        this.hp = GAME_CONFIG.bossHp; this.maxHp = GAME_CONFIG.bossHp;
+        this.vx = 0; this.jitterTimer = 0; this.attackTimer = 0; this.currentAttack = 0; this.attackCooldown = 0;
+    }
+    baseUpdate() {
+        let ts = timeScale * lipstickTimeScale;
+        this.jitterTimer += ts;
+        if(this.jitterTimer > 60) { this.vx = (Math.random() - 0.5) * GAME_CONFIG.bossSpeed * 3; this.jitterTimer = 0; }
+        this.x += this.vx * ts; this.vx *= 0.95;
+        if (this.x <= 0) { this.x = 0; this.vx *= -1; }
+        if (this.x >= width - this.w) { this.x = width - this.w; this.vx *= -1; }
+        this.y = 60 + Math.sin(frames * 0.03 * ts) * 15;
+        this.attackTimer += ts;
+        if (this.attackCooldown > 0) this.attackCooldown -= ts;
+    }
+    canSwitchAttack(cooldown) {
+        if (this.attackCooldown <= 0) { this.attackCooldown = cooldown; return true; }
+        return false;
+    }
+}
+
+class LightningBolt {
+    constructor(x, y, angle) {
+        this.x = x; this.y = y;
+        this.angle = angle;
+        this.speed = 10;
+        this.vx = Math.cos(angle) * this.speed;
+        this.vy = Math.sin(angle) * this.speed;
+        this.markedForDeletion = false;
+        this.zigZagOffset = 0;
+        this.points = [];
+        this.life = 100;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.vx * ts;
+        this.y += this.vy * ts;
+        this.life -= ts;
+        this.zigZagOffset += 0.5 * ts;
+
+        this.points = [];
+        for(let i=0; i<5; i++) {
+            let t = i/5;
+            let perp = this.angle + Math.PI/2;
+            let zig = Math.sin(this.zigZagOffset + i) * 15;
+            this.points.push({
+                x: this.x - this.vx * t * 3 + Math.cos(perp) * zig,
+                y: this.y - this.vy * t * 3 + Math.sin(perp) * zig
+            });
+        }
+
+        if (this.x < 0 || this.x > width || this.y > height || this.life <= 0) this.markedForDeletion = true;
+    }
+
+    draw() {
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ffeb3b';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        if(this.points.length > 0) {
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for(let p of this.points) ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x && this.x < rect.x + rect.w && 
+                this.y > rect.y && this.y < rect.y + rect.h);
+    }
+}
+
+class WordBullet {
+    constructor(x, y, vx, vy, text, color, isGood = false) {
+        this.x = x; this.y = y;
+        this.vx = vx; this.vy = vy;
+        this.text = text;
+        this.color = color;
+        this.isGood = isGood;
+        this.markedForDeletion = false;
+        this.width = ctx.measureText(text).width + 20;
+        this.height = 20;
+        this.pulse = 0;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.vx * ts;
+        this.y += this.vy * ts;
+        this.pulse += 0.1 * ts;
+        if (this.x < -100 || this.x > width + 100 || this.y > height + 50) this.markedForDeletion = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.font = this.isGood ? "bold 16px Arial" : "bold 14px Arial";
+
+        if (this.isGood) {
+            let glow = 10 + Math.sin(this.pulse) * 5;
+            ctx.shadowColor = '#66ff99';
+            ctx.shadowBlur = glow;
+            ctx.fillStyle = '#ccffcc';
+
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#00cc66';
+            ctx.beginPath();
+            let hx = this.x + this.width/2 - 10, hy = this.y - 5;
+            ctx.moveTo(hx, hy + 5);
+            ctx.bezierCurveTo(hx, hy, hx - 10, hy, hx - 10, hy + 5);
+            ctx.bezierCurveTo(hx - 10, hy + 10, hx, hy + 15, hx, hy + 15);
+            ctx.bezierCurveTo(hx, hy + 10, hx + 10, hy + 10, hx + 10, hy + 5);
+            ctx.bezierCurveTo(hx + 10, hy, hx, hy, hx, hy + 5);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#ffffff';
+        }
+
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x - 50 && this.x < rect.x + rect.w + 50 && 
+                this.y > rect.y - 10 && this.y < rect.y + rect.h + 10);
+    }
+}
+
+class IceShard {
+    constructor(x, y, angle, speed) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.speed = speed;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.markedForDeletion = false;
+        this.rotation = 0;
+        this.size = 22;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.vx * ts;
+        this.y += this.vy * ts;
+        this.rotation += 0.1 * ts;
+
+        if (this.x < -50 || this.x > width + 50 || this.y > height + 50) {
+            this.markedForDeletion = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        ctx.fillStyle = '#e6f3ff';
+        ctx.shadowColor = '#4da6ff';
+        ctx.shadowBlur = 10;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -this.size);
+        ctx.lineTo(this.size * 0.6, 0);
+        ctx.lineTo(0, this.size);
+        ctx.lineTo(-this.size * 0.6, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, -this.size * 0.5);
+        ctx.lineTo(this.size * 0.3, 0);
+        ctx.lineTo(0, this.size * 0.5);
+        ctx.lineTo(-this.size * 0.3, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x && this.x < rect.x + rect.w && 
+                this.y > rect.y && this.y < rect.y + rect.h);
+    }
+}
+
+class LogicGate {
+    constructor(x, y, gateType) {
+        this.x = x;
+        this.y = y;
+        this.gateType = gateType;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = 2 + Math.random() * 2;
+        this.markedForDeletion = false;
+        this.pulse = 0;
+        this.size = 50;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.y += this.vy * ts;
+        this.x += this.vx * ts + Math.sin(this.pulse) * 2;
+        this.pulse += 0.05 * ts;
+
+        if (this.y > height + 50) this.markedForDeletion = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        let glow = 15 + Math.sin(this.pulse * 2) * 5;
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = '#00ccff';
+        ctx.strokeStyle = '#00ccff';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = 'rgba(0, 50, 100, 0.8)';
+
+        ctx.beginPath();
+        if (this.gateType === 'AND') {
+            ctx.moveTo(-this.size, -this.size);
+            ctx.lineTo(0, -this.size);
+            ctx.arc(0, 0, this.size, -Math.PI/2, Math.PI/2);
+            ctx.lineTo(-this.size, this.size);
+            ctx.closePath();
+        } else if (this.gateType === 'OR') {
+            ctx.moveTo(-this.size, -this.size);
+            ctx.quadraticCurveTo(0, -this.size * 0.5, this.size, 0);
+            ctx.quadraticCurveTo(0, this.size * 0.5, -this.size, this.size);
+            ctx.quadraticCurveTo(-this.size * 0.5, 0, -this.size, -this.size);
+        } else if (this.gateType === 'NOT') {
+            ctx.moveTo(-this.size, -this.size);
+            ctx.lineTo(this.size, 0);
+            ctx.lineTo(-this.size, this.size);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(this.size + 5, 0, 5, 0, Math.PI * 2);
+        } else {
+            ctx.moveTo(-this.size - 10, -this.size);
+            ctx.quadraticCurveTo(-5, -this.size * 0.5, this.size, 0);
+            ctx.quadraticCurveTo(-5, this.size * 0.5, -this.size - 10, this.size);
+            ctx.quadraticCurveTo(-this.size * 0.3, 0, -this.size - 10, -this.size);
+        }
+
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.gateType, 0, 5);
+
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x - 20 && this.x < rect.x + rect.w + 20 && 
+                this.y > rect.y - 20 && this.y < rect.y + rect.h + 20);
+    }
+}
+
+class ColdWind {
+    constructor(y) {
+        this.x = -100;
+        this.y = y;
+        this.width = 200;
+        this.height = 30;
+        this.speed = 8;
+        this.markedForDeletion = false;
+        this.life = 120;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.speed * ts;
+        this.life -= ts;
+
+        if (this.x > width + 100 || this.life <= 0) {
+            this.markedForDeletion = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        let alpha = Math.min(1, this.life / 60);
+        ctx.globalAlpha = alpha * 0.6;
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+
+        for (let i = 0; i < 5; i++) {
+            let yOffset = (i - 2) * 8;
+            ctx.beginPath();
+            ctx.moveTo(-this.width/2, yOffset);
+            ctx.lineTo(this.width/2, yOffset + Math.sin(this.life * 0.1 + i) * 5);
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 8; i++) {
+            let px = (Math.random() - 0.5) * this.width;
+            let py = (Math.random() - 0.5) * this.height;
+            ctx.beginPath();
+            ctx.arc(px, py, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x - this.width/2 < rect.x + rect.w && 
+                this.x + this.width/2 > rect.x &&
+                this.y - this.height/2 < rect.y + rect.h && 
+                this.y + this.height/2 > rect.y);
+    }
+}
+
+class AnxietySpiral {
+    constructor(x, y, angle, speed, text) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.speed = speed;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.text = text;
+        this.markedForDeletion = false;
+        this.rotation = 0;
+        this.orbitRadius = 0;
+        this.orbitAngle = angle;
+        this.centerX = x;
+        this.centerY = y;
+        this.life = 300;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.life -= ts;
+
+        this.orbitRadius += 0.5 * ts;
+        this.orbitAngle += 0.05 * ts;
+
+        this.x = this.centerX + Math.cos(this.orbitAngle) * this.orbitRadius;
+        this.y = this.centerY + Math.sin(this.orbitAngle) * this.orbitRadius;
+
+        this.centerX += this.vx * 0.1 * ts;
+        this.centerY += this.vy * 0.3 * ts;
+
+        if (this.y > height + 50 || this.life <= 0) this.markedForDeletion = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.fillStyle = '#ff00ff';
+        ctx.shadowColor = '#cc00cc';
+        ctx.shadowBlur = 10;
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x && this.x < rect.x + rect.w && 
+                this.y > rect.y && this.y < rect.y + rect.h);
+    }
+}
+
+class DoubtBomb {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = 1.5;
+        this.markedForDeletion = false;
+        this.size = 30;
+        this.pulse = 0;
+        this.countdown = 120;
+        this.exploded = false;
+    }
+
+    update() {
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.vx * ts;
+        this.y += this.vy * ts;
+        this.pulse += 0.1 * ts;
+        this.countdown -= ts;
+
+        if (this.countdown <= 0 && !this.exploded) {
+            this.explode();
+        }
+
+        if (this.y > height + 50) this.markedForDeletion = true;
+    }
+
+    explode() {
+        this.exploded = true;
+        this.markedForDeletion = true;
+        for (let i = 0; i < 6; i++) {
+            let angle = (i / 6) * Math.PI * 2;
+            let text = negativeThoughts[Math.floor(Math.random() * negativeThoughts.length)];
+            let word = new WordBullet(
+                this.x, this.y,
+                Math.cos(angle) * GAME_CONFIG.enemyBulletSpeed,
+                Math.sin(angle) * GAME_CONFIG.enemyBulletSpeed,
+                text, '#ff0066', false
+            );
+            if (currentBoss && currentBoss.wordBullets) {
+                currentBoss.wordBullets.push(word);
+            }
+        }
+        playSound('lightning');
+        createExplosion(this.x, this.y, '#ff00ff');
+    }
+
+    draw() {
+        ctx.save();
+        let pulseSize = this.size + Math.sin(this.pulse) * 3;
+        ctx.fillStyle = '#ff00ff';
+        ctx.shadowColor = '#ff00ff';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.ceil(this.countdown / 60), this.x, this.y + 3);
+        ctx.restore();
+    }
+
+    checkHit(rect) {
+        return (this.x > rect.x && this.x < rect.x + rect.w && 
+                this.y > rect.y && this.y < rect.y + rect.h);
+    }
+}
+
+class StormCloud extends Boss {
+    constructor() { 
+        super(); 
+        this.name = "My Little Stormcloud"; 
+        this.lightningBolts = [];
+        this.numAttacks = 4;
+        this.isVulnerable = false;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.w/2, this.y + this.h/2);
+        
+        if (currentPowerup === POWERUP_TYPES.SUNLIGHT) {
+            ctx.shadowColor = '#ffeb3b';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(0, 0, 50, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = '#556';
+        ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.arc(-30, 10, 30, 0, Math.PI * 2); ctx.arc(30, 10, 30, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(-15, -5, 8, 0, Math.PI*2); ctx.arc(15, -5, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.beginPath(); ctx.arc(-15, -5, 3, 0, Math.PI*2); ctx.arc(15, -5, 3, 0, Math.PI*2); ctx.fill();
+        
+        if (currentPowerup !== POWERUP_TYPES.SUNLIGHT) {
+            ctx.strokeStyle = '#4da6ff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(0, 0, 55, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#4da6ff';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('☁️ SHIELDED', 0, -60);
+        } else {
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('☀️ VULNERABLE!', 0, -60);
+        }
+        
+        ctx.restore();
+    }
+
+    attack() {
+        let ts = timeScale * lipstickTimeScale;
+
+        switch(this.currentAttack) {
+            case 0:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.cloudLightningRate) < 1) {
+                    let angle = Math.atan2((player.y + player.h/2) - (this.y + this.h), (player.x + player.w/2) - (this.x + this.w/2));
+                    let bolt = new LightningBolt(this.x + this.w/2, this.y + this.h, angle);
+                    this.lightningBolts.push(bolt);
+                    playSound('lightning');
+
+                    if (this.canSwitchAttack(GAME_CONFIG.cloudAttackCooldown)) {
+                        this.currentAttack = 1;
+                    }
+                }
+                break;
+
+            case 1:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.cloudRainRate) < 1) {
+                    for(let i = -1; i <= 1; i++) {
+                        let b = new Bullet(this.x + this.w/2, this.y + this.h, false, 'cloud');
+                        let angle = Math.PI/2 + i * 0.3;
+                        b.vx = Math.cos(angle) * (GAME_CONFIG.enemyBulletSpeed * 0.8);
+                        b.vy = Math.sin(angle) * GAME_CONFIG.enemyBulletSpeed;
+                        b.radius = 4;
+                        b.color = '#88ccff';
+                        enemyBullets.push(b);
+                    }
+
+                    if (this.canSwitchAttack(GAME_CONFIG.cloudAttackCooldown)) {
+                        this.currentAttack = 2;
+                    }
+                }
+                break;
+
+            case 2:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.cloudShockwaveRate) < 1) {
+                    for(let i = 0; i < 8; i++) {
+                        let angle = (i / 8) * Math.PI * 2;
+                        let b = new Bullet(this.x + this.w/2, this.y + this.h/2, false, 'cloud');
+                        b.vx = Math.cos(angle) * GAME_CONFIG.enemyBulletSpeed * 0.6;
+                        b.vy = Math.sin(angle) * GAME_CONFIG.enemyBulletSpeed * 0.6;
+                        b.radius = 6;
+                        b.color = '#ffffaa';
+                        enemyBullets.push(b);
+                    }
+                    playSound('lightning');
+
+                    if (this.canSwitchAttack(GAME_CONFIG.cloudAttackCooldown)) {
+                        this.currentAttack = 3;
+                    }
+                }
+                break;
+
+            case 3:
+                this.sunlightSpawnTimer = (this.sunlightSpawnTimer || 0) + ts;
+                if (this.sunlightSpawnTimer >= GAME_CONFIG.cloudSunlightRate) {
+                    powerups.push(new PowerUp(this.x + this.w/2 - 25, this.y + this.h, POWERUP_TYPES.SUNLIGHT));
+                    this.sunlightSpawnTimer = 0;
+                    playSound('powerup');
+
+                    if (this.canSwitchAttack(GAME_CONFIG.cloudAttackCooldown)) {
+                        this.currentAttack = 0;
+                    }
+                }
+                break;
+        }
+
+        if (this.attackCooldown <= 0 && this.attackTimer > 180) {
+            this.currentAttack = (this.currentAttack + 1) % this.numAttacks;
+            this.attackTimer = 0;
+            this.attackCooldown = 30;
+        }
+    }
+}
+
+class BPDBrain extends Boss {
+    constructor() { 
+        super(); 
+        this.name = "The Overthinking Brain"; 
+        this.w = 120; this.h = 100;
+        this.spiralOffset = 0;
+        this.wordBullets = [];
+        this.numAttacks = 5;
+        this.burstCount = 0;
+        this.burstPhase = 0;
+        this.anxietySpirals = [];
+        this.doubtBombs = [];
+        this.therapyTimer = 0;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.w/2, this.y + this.h/2);
+        ctx.fillStyle = '#e6b3ff';
+        ctx.strokeStyle = '#cc66ff';
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 45, Math.PI, 0);
+        ctx.bezierCurveTo(50, 10, 50, 40, 20, 50);
+        ctx.bezierCurveTo(0, 60, -20, 50, -20, 50);
+        ctx.bezierCurveTo(-50, 40, -50, 10, -45, 0);
+        ctx.fill(); ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(-20, 10); ctx.quadraticCurveTo(0, 30, 20, 10);
+        ctx.moveTo(-30, -10); ctx.quadraticCurveTo(-10, 10, 10, -10);
+        ctx.stroke();
+
+        ctx.fillStyle = 'black';
+        ctx.font = "20px Arial";
+        ctx.fillText("X", -25, 10);
+        ctx.fillText("X", 15, 10);
+
+        ctx.restore();
+    }
+
+    updateCustomAttacks() {
+        let ts = timeScale * lipstickTimeScale;
+
+        this.anxietySpirals.forEach(spiral => {
+            spiral.update();
+            if (spiral.checkHit(player)) {
+                spiral.markedForDeletion = true;
+                if (!devInvulnerable) player.hp -= GAME_CONFIG.brainWordDamage * 1.2;
+                createExplosion(player.x + player.w/2, player.y + player.h/2, '#ff00ff');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 300);
+                playSound('hit');
+                updateUI();
+                if(player.hp <= 0 && !devInvulnerable) endGame(false);
+            }
+        });
+        this.anxietySpirals = this.anxietySpirals.filter(s => !s.markedForDeletion);
+
+        this.doubtBombs.forEach(bomb => {
+            bomb.update();
+            if (bomb.checkHit(player) && !bomb.exploded) {
+                bomb.explode();
+                if (!devInvulnerable) player.hp -= GAME_CONFIG.brainWordDamage;
+                createExplosion(player.x + player.w/2, player.y + player.h/2, '#ff00ff');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 300);
+                playSound('hit');
+                updateUI();
+                if(player.hp <= 0 && !devInvulnerable) endGame(false);
+            }
+        });
+        this.doubtBombs = this.doubtBombs.filter(b => !b.markedForDeletion);
+    }
+
+    drawCustomAttacks() {
+        this.anxietySpirals.forEach(s => s.draw());
+        this.doubtBombs.forEach(b => b.draw());
+    }
+
+    attack() {
+        let ts = timeScale * lipstickTimeScale;
+        this.spiralOffset += 0.03 * ts;
+        this.updateCustomAttacks();
+
+        this.therapyTimer += ts;
+        if (this.therapyTimer > 600) {
+            this.spawnTherapyPowerUp();
+            this.therapyTimer = 0;
+        }
+
+        this.attackTimer += ts;
+
+        if (this.attackTimer > 400 && this.attackCooldown <= 0) {
+            this.currentAttack = (this.currentAttack + 1) % this.numAttacks;
+            this.attackTimer = 0;
+            this.attackCooldown = 120;
+        }
+
+        switch(this.currentAttack) {
+            case 0:
+                if (this.attackTimer % 60 < 1 && this.attackTimer > 0) {
+                    let text = negativeThoughts[Math.floor(Math.random() * negativeThoughts.length)];
+                    let angle = this.spiralOffset;
+                    let word = new WordBullet(
+                        this.x + this.w/2, this.y + this.h/2,
+                        Math.cos(angle) * GAME_CONFIG.enemyBulletSpeed * 0.7, 
+                        Math.sin(angle) * GAME_CONFIG.enemyBulletSpeed * 0.7,
+                        text, '#cc66ff', false
+                    );
+                    this.wordBullets.push(word);
+                }
+                if (this.attackTimer > 300) {
+                    this.currentAttack = 1;
+                    this.burstCount = 0;
+                    this.burstPhase = 0;
+                    this.attackTimer = 0;
+                    this.attackCooldown = 60;
+                }
+                break;
+
+            case 1:
+                if (this.burstPhase === 0) {
+                    this.burstCount = 0;
+                    this.burstPhase = 1;
+                }
+                if (this.burstPhase === 1 && this.attackTimer % 40 < 1) {
+                    if (this.burstCount < 3) {
+                        let text = negativeThoughts[Math.floor(Math.random() * negativeThoughts.length)];
+                        let angle = Math.atan2((player.y + player.h/2) - (this.y + this.h/2), (player.x + player.w/2) - (this.x + this.w/2));
+                        angle += (Math.random() - 0.5) * 0.8;
+                        let word = new WordBullet(
+                            this.x + this.w/2, this.y + this.h/2,
+                            Math.cos(angle) * GAME_CONFIG.enemyBulletSpeed * 1.2, 
+                            Math.sin(angle) * GAME_CONFIG.enemyBulletSpeed * 1.2,
+                            text, '#ff66cc', false
+                        );
+                        this.wordBullets.push(word);
+                        this.burstCount++;
+                        playSound('shoot');
+                    } else {
+                        this.burstPhase = 2;
+                    }
+                }
+                if (this.burstPhase === 2 || this.attackTimer > 250) {
+                    this.currentAttack = 2;
+                    this.burstPhase = 0;
+                    this.attackTimer = 0;
+                    this.attackCooldown = 60;
+                }
+                break;
+
+            case 2:
+                if (this.attackTimer % 60 < 1 && this.attackTimer < 180) {
+                    let playerAngle = Math.atan2(
+                        (player.y + player.h/2) - (this.y + this.h/2),
+                        (player.x + player.w/2) - (this.x + this.w/2)
+                    );
+                    for(let i = 0; i < 4; i++) {
+                        let text = negativeThoughts[Math.floor(Math.random() * negativeThoughts.length)];
+                        let angleSpread = (Math.random() - 0.5) * 1.5;
+                        let angle = playerAngle + angleSpread;
+                        let speed = GAME_CONFIG.enemyBulletSpeed * (0.9 + Math.random() * 0.6);
+                        let word = new WordBullet(
+                            this.x + this.w/2, this.y + this.h/2,
+                            Math.cos(angle) * speed, Math.sin(angle) * speed,
+                            text, '#ff3399', false
+                        );
+                        this.wordBullets.push(word);
+                    }
+                    playSound('shoot');
+                }
+                if (this.attackTimer > 280) {
+                    this.currentAttack = 3;
+                    this.attackTimer = 0;
+                    this.attackCooldown = 60;
+                }
+                break;
+
+            case 3:
+                if (this.attackTimer % 50 < 1) {
+                    let text = negativeThoughts[Math.floor(Math.random() * negativeThoughts.length)];
+                    let angle = Math.random() * Math.PI * 2;
+                    let spiral = new AnxietySpiral(
+                        this.x + this.w/2, this.y + this.h/2,
+                        angle, GAME_CONFIG.enemyBulletSpeed, text
+                    );
+                    this.anxietySpirals.push(spiral);
+                }
+                if (this.attackTimer > 240) {
+                    this.currentAttack = 4;
+                    this.attackTimer = 0;
+                    this.attackCooldown = 60;
+                }
+                break;
+
+            case 4:
+                if (this.attackTimer % 80 < 1 && this.attackTimer < 160) {
+                    let bomb = new DoubtBomb(this.x + this.w/2, this.y + this.h/2);
+                    this.doubtBombs.push(bomb);
+                }
+                if (this.attackTimer > 200) {
+                    this.spawnTherapyPowerUp();
+                    this.currentAttack = 0;
+                    this.attackTimer = 0;
+                    this.attackCooldown = 120;
+                }
+                break;
+        }
+    }
+
+    spawnTherapyPowerUp() {
+        let offsetX = (Math.random() - 0.5) * 200;
+        let spawnX = this.x + this.w/2 + offsetX;
+        spawnX = Math.max(50, Math.min(width - 100, spawnX));
+        let spawnY = this.y + this.h + 20;
+
+        let therapyText = therapyWords[Math.floor(Math.random() * therapyWords.length)];
+        let powerup = new PowerUp(spawnX, spawnY, POWERUP_TYPES.THERAPY, therapyText);
+        powerup.vx = (width/2 - spawnX) * 0.002;
+        powerup.vy = 1.5;
+        powerups.push(powerup);
+        playSound('powerup');
+        this.therapyTimer = 0;
+    }
+}
+
+class NordicMan extends Boss {
+    constructor() { 
+        super(); 
+        this.name = "The Bearded Argument"; 
+        this.w = 100; this.h = 120;
+        this.attackCycle = 0;
+        this.numAttacks = 7;
+        this.iceShards = [];
+        this.logicGates = [];
+        this.coldWinds = [];
+        this.windTimer = 0;
+        this.comboCount = 0;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.w/2, this.y + this.h/2);
+
+        ctx.fillStyle = '#cce6ff';
+        ctx.shadowColor = '#4da6ff';
+        ctx.shadowBlur = 20;
+
+        ctx.beginPath();
+        ctx.moveTo(-30, 0);
+        ctx.lineTo(30, 0);
+        ctx.lineTo(40, 60);
+        ctx.lineTo(-40, 60);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(0, -10, 35, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#003366';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-20, -15); ctx.lineTo(-5, -10);
+        ctx.moveTo(20, -15); ctx.lineTo(5, -10);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    updateCustomAttacks() {
+        let ts = timeScale * lipstickTimeScale;
+
+        this.iceShards.forEach(shard => {
+            shard.update();
+            if (shard.checkHit(player)) {
+                shard.markedForDeletion = true;
+                if (!devInvulnerable) player.hp -= GAME_CONFIG.manDamage * 1.5;
+                createExplosion(player.x + player.w/2, player.y + player.h/2, '#4da6ff');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 300);
+                playSound('hit');
+                updateUI();
+                if(player.hp <= 0 && !devInvulnerable) endGame(false);
+            }
+        });
+        this.iceShards = this.iceShards.filter(s => !s.markedForDeletion);
+
+        this.logicGates.forEach(gate => {
+            gate.update();
+            if (gate.checkHit(player)) {
+                gate.markedForDeletion = true;
+                if (!devInvulnerable) player.hp -= GAME_CONFIG.manDamage;
+                createExplosion(player.x + player.w/2, player.y + player.h/2, '#00ccff');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 300);
+                playSound('hit');
+                updateUI();
+                if(player.hp <= 0 && !devInvulnerable) endGame(false);
+            }
+        });
+        this.logicGates = this.logicGates.filter(g => !g.markedForDeletion);
+
+        this.coldWinds.forEach(wind => {
+            wind.update();
+            if (wind.checkHit(player)) {
+                player.x += 10 * ts;
+                if (frames % 10 === 0 && !devInvulnerable) {
+                    player.hp -= 2;
+                    updateUI();
+                }
+            }
+        });
+        this.coldWinds = this.coldWinds.filter(w => !w.markedForDeletion);
+    }
+
+    drawCustomAttacks() {
+        this.iceShards.forEach(s => s.draw());
+        this.logicGates.forEach(g => g.draw());
+        this.coldWinds.forEach(w => w.draw());
+    }
+
+    attack() {
+        let ts = timeScale * lipstickTimeScale;
+        this.updateCustomAttacks();
+
+        if (Math.random() < 0.15 && this.attackCooldown <= 0) {
+            this.currentAttack = Math.floor(Math.random() * this.numAttacks);
+            this.attackCooldown = 20;
+        }
+
+        switch(this.currentAttack) {
+            case 0:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.manMoneyRate / ts) < 1) {
+                    let baseAngle = Math.atan2((player.y) - (this.y + this.h), (player.x) - (this.x + this.w/2));
+                    let angle = baseAngle;
+                    let shard = new IceShard(this.x + this.w/2, this.y + this.h, angle, GAME_CONFIG.enemyBulletSpeed * 1.5);
+                    this.iceShards.push(shard);
+                    playSound('shoot');
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown * 2)) {
+                        this.currentAttack = 1;
+                    }
+                }
+                break;
+
+            case 1:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.manSarcasmRate / ts) < 1) {
+                    let gates = ['AND', 'OR', 'NOT', 'XOR'];
+                    let gateType = gates[Math.floor(Math.random() * gates.length)];
+                    let gate = new LogicGate(this.x + this.w/2 + (Math.random() - 0.5) * 200, this.y + this.h, gateType);
+                    this.logicGates.push(gate);
+
+                    if (Math.random() > 0.7) {
+                        setTimeout(() => {
+                            if (currentBoss && currentBoss.name === "The Bearded Argument") {
+                                let gate2 = new LogicGate(currentBoss.x + currentBoss.w/2 + (Math.random() - 0.5) * 200, currentBoss.y + currentBoss.h, gates[Math.floor(Math.random() * gates.length)]);
+                                currentBoss.logicGates.push(gate2);
+                            }
+                        }, 400);
+                    }
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown)) {
+                        this.currentAttack = 2;
+                    }
+                }
+                break;
+
+            case 2:
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.manNerdyRate / ts) < 1) {
+                    let text = sarcasticComments[Math.floor(Math.random() * sarcasticComments.length)];
+                    let angle = (this.attackTimer * 0.1) % (Math.PI * 2);
+                    for (let i = 0; i < 2; i++) {
+                        let spreadAngle = angle + (i * Math.PI * 2 / 2);
+                        let word = new WordBullet(
+                            this.x + this.w/2, this.y + this.h,
+                            Math.cos(spreadAngle) * GAME_CONFIG.enemyBulletSpeed * 0.6,
+                            Math.sin(spreadAngle) * GAME_CONFIG.enemyBulletSpeed * 0.6 + 0.5,
+                            text, '#ff9966', false
+                        );
+                        enemyBullets.push(word);
+                    }
+                    playSound('shoot');
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown)) {
+                        this.currentAttack = 3;
+                    }
+                }
+                break;
+
+            case 3:
+                this.windTimer += ts;
+
+                if (this.windTimer > 120) {
+                    let windY = player.y + (Math.random() - 0.5) * 200;
+                    let wind = new ColdWind(Math.max(100, Math.min(height - 100, windY)));
+                    this.coldWinds.push(wind);
+                    this.windTimer = 0;
+                }
+
+                if (this.attackTimer % Math.max(1, GAME_CONFIG.manSnowballRate * 2 / ts) < 1) {
+                    let b = new Bullet(this.x + this.w/2, this.y + this.h, false, 'man');
+                    let spread = (Math.random() - 0.5) * 1.5;
+                    b.vx = spread * GAME_CONFIG.enemyBulletSpeed;
+                    b.vy = GAME_CONFIG.enemyBulletSpeed * 1.2;
+                    b.isSnowball = true;
+                    b.radius = 12;
+                    b.color = '#ffffff';
+                    enemyBullets.push(b);
+                }
+
+                if (this.attackTimer > 300 && this.canSwitchAttack(GAME_CONFIG.manAttackCooldown * 1.5)) {
+                    this.windTimer = 0;
+                    this.currentAttack = 4;
+                }
+                break;
+
+            case 4:
+                this.loveSpawnTimer = (this.loveSpawnTimer || 0) + ts;
+                if (this.loveSpawnTimer >= GAME_CONFIG.manLoveRate) {
+                    let offsetX = (Math.random() - 0.5) * 150;
+                    let spawnX = this.x + this.w/2 + offsetX;
+                    spawnX = Math.max(50, Math.min(width - 100, spawnX));
+                    let spawnY = this.y + this.h + 30;
+
+                    let powerup = new PowerUp(spawnX, spawnY, POWERUP_TYPES.LOVE_LETTER);
+                    powerup.vx = (width/2 - spawnX) * 0.001;
+                    powerup.vy = 1.2;
+                    powerups.push(powerup);
+                    playSound('powerup');
+                    this.loveSpawnTimer = 0;
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown)) {
+                        this.currentAttack = 5;
+                    }
+                }
+                break;
+
+            case 5:
+                if (this.canSwitchAttack(0)) {
+                    for (let i = 0; i < 6; i++) {
+                        let angle = (i / 6) * Math.PI * 2;
+                        let shard = new IceShard(this.x + this.w/2, this.y + this.h/2, angle, GAME_CONFIG.enemyBulletSpeed);
+                        this.iceShards.push(shard);
+                    }
+                    playSound('lightning');
+
+                    setTimeout(() => {
+                        if (currentBoss && currentBoss.name === "The Bearded Argument") {
+                            for (let i = 0; i < 6; i++) {
+                                let angle = (i / 6) * Math.PI * 2 + Math.PI/6;
+                                let shard = new IceShard(currentBoss.x + currentBoss.w/2, currentBoss.y + currentBoss.h/2, angle, GAME_CONFIG.enemyBulletSpeed * 1.2);
+                                currentBoss.iceShards.push(shard);
+                            }
+                        }
+                    }, 800);
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown * 2)) {
+                        this.currentAttack = 6;
+                    }
+                }
+                break;
+
+            case 6:
+                this.sexySpawnTimer = (this.sexySpawnTimer || 0) + ts;
+                if (this.sexySpawnTimer >= GAME_CONFIG.manRazorRate) {
+                    let offsetX = (Math.random() - 0.5) * 150;
+                    let spawnX = this.x + this.w/2 + offsetX;
+                    spawnX = Math.max(50, Math.min(width - 100, spawnX));
+                    let spawnY = this.y + this.h + 30;
+
+                    let powerup = new PowerUp(spawnX, spawnY, POWERUP_TYPES.SEXY_CHARACTER);
+                    powerup.vx = (width/2 - spawnX) * 0.001;
+                    powerup.vy = 1.2;
+                    powerups.push(powerup);
+                    playSound('powerup');
+                    this.sexySpawnTimer = 0;
+
+                    if (this.canSwitchAttack(GAME_CONFIG.manAttackCooldown)) {
+                        this.currentAttack = 0;
+                    }
+                }
+                break;
+        }
+
+        if (this.attackCooldown <= 0 && this.attackTimer > 200) {
+            if (Math.random() < 0.4) {
+                this.currentAttack = Math.floor(Math.random() * this.numAttacks);
+            } else {
+                this.currentAttack = (this.currentAttack + 1) % this.numAttacks;
+            }
+            this.attackTimer = 0;
+            this.attackCooldown = 30 + Math.random() * 30;
+        }
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 4 - 2;
+        this.speedY = Math.random() * 4 - 2;
+        this.life = 1;
+    }
+    update() { 
+        let ts = timeScale * lipstickTimeScale;
+        this.x += this.speedX * ts; this.y += this.speedY * ts; this.life -= 0.02 * ts; 
+    }
+    draw() {
+        ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, this.life);
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+class BackgroundHeart {
+    constructor() { this.reset(); this.y = Math.random() * height; }
+    reset() { 
+        this.x = Math.random() * width; this.y = height + 10; 
+        this.size = Math.random() * 20 + 10; this.speed = Math.random() * 1 + 0.5; 
+        this.opacity = Math.random() * 0.5 + 0.1; 
+    }
+    update() { 
+        let ts = timeScale * lipstickTimeScale;
+        this.y -= this.speed * ts; 
+        if (this.y < -50) this.reset(); 
+    }
+    draw() {
+        ctx.globalAlpha = this.opacity; ctx.fillStyle = '#ffccdd';
+        let s = this.size;
+        ctx.beginPath(); 
+        ctx.moveTo(this.x, this.y + s/2); 
+        ctx.bezierCurveTo(this.x, this.y, this.x - s/2, this.y, this.x - s/2, this.y + s/2); 
+        ctx.bezierCurveTo(this.x - s/2, this.y + s, this.x, this.y + s*1.5, this.x, this.y + s*1.5); 
+        ctx.bezierCurveTo(this.x, this.y + s, this.x + s/2, this.y + s, this.x + s/2, this.y + s/2); 
+        ctx.bezierCurveTo(this.x + s/2, this.y, this.x, this.y, this.x, this.y + s/2); 
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ==========================================
+// INPUT & UTILS
+// ==========================================
+const keys = {};
+window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (e.code === 'Space' && !e.repeat && gameActive && gamePhase !== PHASE.START && gamePhase !== PHASE.WIN && gamePhase !== PHASE.ENDING && gamePhase !== PHASE.DIALOGUE && gamePhase !== PHASE.REJECTED) {
+        shootBullet();
+    }
+    if (e.key === '`' || e.key === '~') toggleDevMenu();
+});
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+// ==========================================
+// MOBILE RESIZE FUNCTION - FIXED ASPECT RATIO
+// ==========================================
+function resize() {
+    // Fixed internal resolution - game logic uses these dimensions
+    const gameWidth = 960;
+    const gameHeight = 540;
+    
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calculate scale to fit the game into the window while maintaining aspect ratio
+    const scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
+    
+    // Set internal coordinate system (game logic uses these dimensions)
+    width = gameWidth;
+    height = gameHeight;
+    canvas.width = gameWidth;
+    canvas.height = gameHeight;
+    
+    // Scale the canvas via CSS to fit the screen (this creates the "zoom out" effect)
+    canvas.style.width = (gameWidth * scale) + 'px';
+    canvas.style.height = (gameHeight * scale) + 'px';
+    
+    // Initialize player position if first load
+    if (player.x === 0) { 
+        player.x = width/2 - 40; 
+        player.y = height - 140; 
+    }
+    if (hearts.length === 0) { 
+        for(let i=0; i<30; i++) hearts.push(new BackgroundHeart()); 
+    }
+}
+window.addEventListener('resize', resize);
+
+function createExplosion(x, y, color) { for(let i=0; i<10; i++) particles.push(new Particle(x, y, color)); }
+
+function updateUI() {
+    let displayHp = devInvulnerable ? 100 : Math.max(0, player.hp);
+    document.getElementById('player-hp').style.width = displayHp + '%';
+    if (currentBoss) {
+        document.getElementById('boss-hp-bar').style.width = Math.max(0, currentBoss.hp) + '%';
+        document.getElementById('boss-name').innerText = "⚔️ " + currentBoss.name;
+        const bar = document.getElementById('boss-hp-bar');
+        if (gamePhase === PHASE.CLOUD) bar.style.background = 'linear-gradient(90deg, #4da6ff, #004080)';
+        if (gamePhase === PHASE.BRAIN) bar.style.background = 'linear-gradient(90deg, #e6b3ff, #800080)';
+        if (gamePhase === PHASE.MAN) bar.style.background = 'linear-gradient(90deg, #cce6ff, #004080)';
+    } else {
+        document.getElementById('boss-hp-bar').style.width = '0%';
+    }
+    const powerupBar = document.getElementById('powerup-bar-outer');
+    const powerupName = document.getElementById('powerup-name');
+    const powerupInner = document.getElementById('powerup-bar-inner');
+    if (currentPowerup !== POWERUP_TYPES.NONE) {
+        powerupBar.style.display = 'block';
+        let pct = (powerupTimer / powerupDuration) * 100;
+        powerupInner.style.width = Math.max(0, pct) + '%';
+        let name = currentPowerup === POWERUP_TYPES.SUNLIGHT ? '☀️ SUNLIGHT BULLETS' : currentPowerup === POWERUP_TYPES.THERAPY ? '🧠 AUTO-AIM THERAPY' : currentPowerup === POWERUP_TYPES.LOVE_LETTER ? '💌 RAZOR LOVE' : '💋 DISTRACTION MODE';
+        powerupName.innerText = name;
+    } else {
+        powerupBar.style.display = 'none';
+        powerupName.innerText = '';
+    }
+}
+
+function applyPowerup(type) {
+    playSound('powerup');
+    currentPowerup = type; powerupTimer = 600;
+    switch(type) {
+        case POWERUP_TYPES.SUNLIGHT: powerupDuration = 600; break;
+        case POWERUP_TYPES.THERAPY: powerupDuration = 480; break;
+        case POWERUP_TYPES.LOVE_LETTER: powerupDuration = 540; break;
+        case POWERUP_TYPES.SEXY_CHARACTER: powerupDuration = GAME_CONFIG.lipstickSlowDuration; lipstickTimeScale = 0.4; break;
+        case POWERUP_TYPES.BANDAGE: player.hp = Math.min(player.hp + 25, 100); currentPowerup = POWERUP_TYPES.NONE; powerupTimer = 0; playSound('heal'); updateUI(); return;
+    }
+}
+
+function updatePowerups() {
+    if (currentPowerup === POWERUP_TYPES.NONE) return;
+    let ts = timeScale;
+    powerupTimer -= ts;
+    if (powerupTimer <= 0) { if (currentPowerup === POWERUP_TYPES.SEXY_CHARACTER) lipstickTimeScale = 1.0; currentPowerup = POWERUP_TYPES.NONE; }
+}
+
+function toggleDevMenu() {
+    const menu = document.getElementById('dev-menu');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+function devSkip() { if (currentBoss && gameActive) { currentBoss.hp = 0; updateUI(); endGame(true); }}
+function devSetPhase(phaseNum) {
+    document.getElementById('dev-menu').style.display = 'none';
+    document.getElementById('message-overlay').classList.remove('active');
+    if (phaseNum === 4) victory();
+    else { gamePhase = phaseNum; startPhase(phaseNum); }
+}
+function devToggleSlow() {
+    timeScale = timeScale === 1.0 ? 0.3 : 1.0;
+    const btn = document.getElementById('btn-slow');
+    const ind = document.getElementById('ind-slow');
+    if (timeScale < 1) { btn.classList.add('active'); ind.classList.add('on'); }
+    else { btn.classList.remove('active'); ind.classList.remove('on'); }
+}
+function devToggleInvuln() {
+    devInvulnerable = !devInvulnerable;
+    const btn = document.getElementById('btn-invuln');
+    const ind = document.getElementById('ind-invuln');
+    if (devInvulnerable) { player.hp = 100; btn.classList.add('active'); ind.classList.add('on'); updateUI(); }
+    else { btn.classList.remove('active'); ind.classList.remove('on'); }
+}
+
+// ==========================================
+// MENU FUNCTIONS
+// ==========================================
+function showDialogue(phase) {
+    gamePhase = PHASE.DIALOGUE; gameActive = false;
+    const data = WISE_MAN_DIALOGUES[phase];
+    const overlay = document.getElementById('message-overlay');
+    const card = document.getElementById('card-content');
+
+    card.innerHTML = `
+        <div class="wise-man-portrait">${data.emoji}</div>
+        <h1>${data.title}</h1>
+        <div class="dialogue">"${data.dialogue}"</div>
+        <div class="advice">${data.advice}</div>
+        <div class="boss-intro">⚔️ ${data.bossName} ⚔️<br>${data.bossDesc}</div>
+        <button id="begin-btn" class="next-btn">Begin Battle</button>
+    `;
+
+    overlay.classList.add('active');
+    overlay.scrollTop = 0;
+
+    setTimeout(() => {
+        const btn = document.getElementById('begin-btn');
+        if (btn) {
+            const handleStart = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                btn.removeEventListener('click', handleStart);
+                btn.removeEventListener('touchend', handleStart);
+                overlay.classList.remove('active');
+                startPhase(phase);
+            };
+            btn.addEventListener('click', handleStart);
+            btn.addEventListener('touchend', handleStart, {passive: false});
+        }
+    }, 50);
+}
+
+function showTitleScreen() {
+    const overlay = document.getElementById('message-overlay');
+    const card = document.getElementById('card-content');
+
+    card.innerHTML = `
+        <h1 style="color: #ff66b2; font-size: 2.5em; margin-bottom: 10px;">The Quest for Gita</h1>
+        <p style="color: #cc99cc; font-size: 1.3em; margin-bottom: 30px;">A tale of love, doubt, and perseverance</p>
+        <div style="margin-bottom: 20px; font-size: 1em; color: #888;">
+            <p>📱 Mobile Controls:</p>
+            <p>• Use D-Pad to move</p>
+            <p>• Tap 💝 to shoot</p>
+        </div>
+        <button id="start-btn" class="next-btn" style="font-size: 1.3em; padding: 15px 40px;">Begin Journey 🌹</button>
+    `;
+
+    overlay.classList.add('active');
+    overlay.scrollTop = 0;
+
+    setTimeout(() => {
+        const btn = document.getElementById('start-btn');
+        if (btn) {
+            const handleStart = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                btn.removeEventListener('click', handleStart);
+                btn.removeEventListener('touchend', handleStart);
+                showDialogue(PHASE.CLOUD);
+            };
+            btn.addEventListener('click', handleStart);
+            btn.addEventListener('touchend', handleStart, {passive: false});
+        }
+    }, 50);
+}
+
+function startPhase(phase) {
+    gamePhase = phase; gameActive = true;
+    bullets = []; enemyBullets = []; particles = []; powerups = [];
+    currentPowerup = POWERUP_TYPES.NONE; lipstickTimeScale = 1.0; powerupTimer = 0;
+    
+    // Clear all boss-specific arrays
+    if (currentBoss) {
+        if (currentBoss.wordBullets) currentBoss.wordBullets = [];
+        if (currentBoss.lightningBolts) currentBoss.lightningBolts = [];
+        if (currentBoss.iceShards) currentBoss.iceShards = [];
+        if (currentBoss.logicGates) currentBoss.logicGates = [];
+        if (currentBoss.coldWinds) currentBoss.coldWinds = [];
+        if (currentBoss.anxietySpirals) currentBoss.anxietySpirals = [];
+        if (currentBoss.doubtBombs) currentBoss.doubtBombs = [];
+    }
+    currentBoss = null;
+    
+    if (phase === PHASE.CLOUD) currentBoss = new StormCloud();
+    else if (phase === PHASE.BRAIN) { currentBoss = new BPDBrain(); player.hp = Math.min(player.hp + 30, 100); }
+    else if (phase === PHASE.MAN) { currentBoss = new NordicMan(); player.hp = Math.min(player.hp + 30, 100); }
+    
+    updateUI(); 
+    loop();
+}
+
+function endGame(win) {
+    gameActive = false;
+    if (win) {
+        if (gamePhase === PHASE.CLOUD) showDialogue(PHASE.BRAIN);
+        else if (gamePhase === PHASE.BRAIN) showDialogue(PHASE.MAN);
+        else if (gamePhase === PHASE.MAN) victory();
+    } else {
+        const overlay = document.getElementById('message-overlay');
+        const card = document.getElementById('card-content');
+        card.innerHTML = `
+            <h1>Game Over 💔</h1>
+            <p>You ran out of love energy.</p>
+            <button id="restart-btn" class="next-btn" style="background:#444; color:white; margin-top: 20px;">Try Again</button>
+        `;
+        overlay.classList.add('active');
+        overlay.scrollTop = 0;
+        
+        setTimeout(() => {
+            const btn = document.getElementById('restart-btn');
+            if (btn) {
+                const handleRestart = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    btn.removeEventListener('click', handleRestart);
+                    btn.removeEventListener('touchend', handleRestart);
+                    location.reload();
+                };
+                btn.addEventListener('click', handleRestart);
+                btn.addEventListener('touchend', handleRestart, {passive: false});
+            }
+        }, 50);
+    }
+}
+
+function victory() {
+    gamePhase = PHASE.WIN; 
+    gameActive = false; 
+    currentBoss = null;
+    bullets = []; 
+    enemyBullets = []; 
+    powerups = [];
+
+    playSound('win');
+    const overlay = document.getElementById('message-overlay');
+    const card = document.getElementById('card-content');
+
+    // Hide overlay first to prevent flickering of old content
+    overlay.classList.remove('active');
+    card.innerHTML = '';
+
+    // Set the background image for the victory screen
+    overlay.style.background = 'rgba(0,0,0,0.4)';
+    overlay.style.backgroundImage = 'url("2ff792c1-b9f9-4b9c-a463-f73ad20d194c.png")';
+    overlay.style.backgroundSize = 'contain';
+    overlay.style.backgroundPosition = 'center center';
+    overlay.style.backgroundRepeat = 'no-repeat';
+
+    // Show background first
+    overlay.classList.add('active');
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.8)';
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+    // Delay showing the card for 2 seconds
+    setTimeout(() => {
+        card.innerHTML = `
+            <h1 style="color: #ff66b2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">Gita, Will you be my Valentine? 💌</h1>
+            <p style="color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.9); font-weight: bold;">You defeated the storms, the thoughts, and the doubts... for me.</p>
+            <div class="btn-group" style="margin-top: 30px;">
+                <button id="btn-yes" class="next-btn" style="background: linear-gradient(to bottom, #ff66b2, #cc0066); color: white;">YES! ❤️</button>
+                <button id="btn-no" class="next-btn" style="background: #eee; color: #333;">No...</button>
+            </div>
+        `;
+
+        // Fade in the card
+        card.style.opacity = '1';
+        card.style.transform = 'scale(1)';
+
+        // Setup button event listeners after card is visible
+        setupVictoryButtons();
+    }, 2000);
+}
+
+function setupVictoryButtons() {
+    const btnYes = document.getElementById('btn-yes');
+    const btnNo = document.getElementById('btn-no');
+    const overlay = document.getElementById('message-overlay');
+    const card = document.getElementById('card-content');
+    let yesScale = 1;
+    let noSizeFactor = 1.0;
+
+    // YES button - grows on touch/click
+    btnYes.addEventListener('touchstart', function() {
+        if (yesScale < 2.5) { 
+            yesScale += 0.3; 
+            this.style.transform = `scale(${yesScale})`; 
+        }
+    });
+
+    btnYes.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        gamePhase = PHASE.ENDING;
+        
+        // Hide the card immediately for the 2-second delay
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
+        
+        // YES background - happy/romantic image
+        overlay.style.background = 'rgba(0,0,0,0.4)';
+        overlay.style.backgroundImage = 'url("chat-uncensored-ai-edit.jpg")';
+        overlay.style.backgroundSize = 'contain';
+        overlay.style.backgroundPosition = 'center center';
+        overlay.style.backgroundRepeat = 'no-repeat';
+        overlay.style.backdropFilter = 'blur(4px)';
+        
+        // Wait 2 seconds before showing the congratulation menu
+        setTimeout(() => {
+            card.innerHTML = `
+                <div class="wise-man-portrait">🧙‍♂️</div>
+                <div style="font-size: 1.5em; color: #d4af37; margin: 15px 0; letter-spacing: 4px; font-weight: bold; text-shadow: 0 0 15px rgba(212,175,55,0.4);">ALLAH</div>
+                <h1 style="font-size:2.2em; color: #d4af37; margin-top: 10px;">Blessed Union</h1>
+                <div class="dialogue">"Young warrior, you have conquered not only the battles without, but the battles within. You have proven your heart true and your spirit unwavering."</div>
+                <div class="advice">May your love be a sanctuary in times of storm, a light in moments of darkness. Remember that true love is not the absence of conflict, but the presence of understanding. Cherish each other, grow together, and never stop choosing love.</div>
+                <p style="color: #ff66b2; font-size: 1.3em; margin: 20px 0;">Happy Valentine's Day, Gita! ❤️🌹</p>
+                <div style="margin-top:20px; font-size:3em;">❤️🌹❤️</div>
+                <button id="quit-btn" class="next-btn" style="background: linear-gradient(to bottom, #d4af37, #b8941f); color: #1a0a0a; padding: 15px 40px; font-size: 1.2em; border: 2px solid #f0d878; border-radius: 50px; cursor: pointer; margin-top: 30px; font-weight: bold; box-shadow: 0 5px 15px rgba(212,175,55,0.3);">Quit Game</button>
+            `;
+            
+            // Fade in the card
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+            
+            playSound('win');
+
+            document.getElementById('quit-btn').addEventListener('click', function() {
+                window.close();
+                // Fallback if window.close() doesn't work
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#1a050d;color:#d4af37;font-family:Georgia,serif;font-size:2em;text-align:center;"><div>🌹 Thank you for playing! 🌹<br><span style="font-size:0.5em;color:#666;">You may close this tab</span></div></div>';
+            });
+        }, 2000);
+    });
+
+    // NO button - moves away on touch, click shows rejection
+    btnNo.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        const rect = this.getBoundingClientRect();
+        const newX = Math.random() * (window.innerWidth - rect.width - 40) + 20;
+        const newY = Math.random() * (window.innerHeight - rect.height - 200) + 100;
+        this.style.position = 'fixed';
+        this.style.left = newX + 'px';
+        this.style.top = newY + 'px';
+    });
+
+    btnNo.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        gamePhase = PHASE.REJECTED;
+        
+        // Hide the card immediately for the 2-second delay
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
+        
+        // NO background - sad/dark image
+        overlay.style.background = 'rgba(0,0,0,0.6)';
+        overlay.style.backgroundImage = 'url("f00a14df-24c8-4990-b149-9a30294c0b4e.png")';
+        overlay.style.backgroundSize = 'contain';
+        overlay.style.backgroundPosition = 'center center';
+        overlay.style.backgroundRepeat = 'no-repeat';
+        overlay.style.backdropFilter = 'blur(4px)';
+        
+        // Wait 2 seconds before showing the rejection menu
+        setTimeout(() => {
+            card.innerHTML = `
+                <h1 style="color: #666; font-size: 2.5em;">💔 Rejected 💔</h1>
+                <p style="color: #999; font-size: 1.2em; margin: 20px 0;">Even after conquering all those battles...</p>
+                <p style="color: #ccc; font-style: italic;">"The heart wants what it wants, but sometimes it doesn't want you back."</p>
+                <div style="margin-top: 30px; font-size: 3em; opacity: 0.5;">😢🥀😢</div>
+                <p style="color: #666; margin-top: 20px; font-size: 0.9em;">(Maybe try the YES button next time?)</p>
+                <button id="try-again-btn" class="next-btn" style="background:#444; color:#ccc; margin-top: 20px;">Try Again</button>
+            `;
+            
+            // Fade in the card
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+
+            document.getElementById('try-again-btn').addEventListener('click', function() {
+                location.reload();
+            });
+        }, 2000);
+    });
+}
+
+let currentBoss = null;
+let bullets = [];
+let enemyBullets = [];
+let particles = [];
+let hearts = [];
+let powerups = [];
+
+function loop() {
+    if (!gameActive) return;
+    if (gamePhase === PHASE.WIN || gamePhase === PHASE.ENDING || gamePhase === PHASE.REJECTED) return;
+
+    ctx.clearRect(0, 0, width, height);
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    if (gamePhase === PHASE.CLOUD) { gradient.addColorStop(0, '#330014'); gradient.addColorStop(1, '#99004d'); }
+    else if (gamePhase === PHASE.BRAIN) { gradient.addColorStop(0, '#1a001a'); gradient.addColorStop(1, '#4d004d'); }
+    else if (gamePhase === PHASE.MAN) { gradient.addColorStop(0, '#001a33'); gradient.addColorStop(1, '#004080'); }
+    else { gradient.addColorStop(0, '#330014'); gradient.addColorStop(1, '#99004d'); }
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
+    
+    hearts.forEach(h => { h.update(); h.draw(); });
+    frames++;
+    updatePowerups();
+    
+    if (currentBoss) {
+        currentBoss.baseUpdate();
+        currentBoss.attack();
+        currentBoss.draw();
+        
+        if (currentBoss.name === "The Bearded Argument" && currentBoss.drawCustomAttacks) {
+            currentBoss.drawCustomAttacks();
+        }
+        if (currentBoss.name === "The Overthinking Brain" && currentBoss.drawCustomAttacks) {
+            currentBoss.drawCustomAttacks();
+        }
+        
+        if (currentBoss.lightningBolts) {
+            currentBoss.lightningBolts.forEach(bolt => {
+                bolt.update(); bolt.draw();
+                if (bolt.checkHit(player)) {
+                    bolt.markedForDeletion = true;
+                    if (!devInvulnerable) player.hp -= GAME_CONFIG.lightningDamage;
+                    createExplosion(player.x + player.w/2, player.y + player.h/2, '#ffeb3b');
+                    document.body.classList.add('shake');
+                    setTimeout(() => document.body.classList.remove('shake'), 300);
+                    playSound('hit'); updateUI();
+                }
+            });
+            currentBoss.lightningBolts = currentBoss.lightningBolts.filter(b => !b.markedForDeletion);
+        }
+    }
+    
+    powerups.forEach(p => { p.update(); p.draw(); if (p.checkHit(player)) { p.markedForDeletion = true; applyPowerup(p.type); }});
+    powerups = powerups.filter(p => !p.markedForDeletion);
+    
+    player.update(); player.draw();
+    
+    bullets.forEach(b => {
+        b.update(); b.draw();
+        if (currentBoss && b.isPlayer && b.x > currentBoss.x && b.x < currentBoss.x + currentBoss.w && b.y > currentBoss.y && b.y < currentBoss.y + currentBoss.h) {
+            if (currentBoss.name === "My Little Stormcloud" && currentPowerup !== POWERUP_TYPES.SUNLIGHT) {
+                b.markedForDeletion = true; createExplosion(b.x, b.y, '#4da6ff'); playSound('bounce');
+            } else {
+                b.markedForDeletion = true; currentBoss.hp -= b.damage || GAME_CONFIG.playerBulletDamage;
+                createExplosion(b.x, b.y, '#fff'); updateUI();
+                if(currentBoss.hp <= 0) endGame(true);
+            }
+        }
+    });
+    
+    enemyBullets.forEach(b => {
+        b.update(); b.draw();
+        if (b.x > player.x && b.x < player.x + player.w && b.y > player.y && b.y < player.y + player.h) {
+            b.markedForDeletion = true;
+            let damage = b.type === 'cloud' ? 10 : GAME_CONFIG.manDamage;
+            if (!devInvulnerable) player.hp -= damage;
+            createExplosion(player.x + player.w/2, player.y + player.h/2, '#ff0000');
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 300);
+            playSound('hit'); updateUI();
+            if(player.hp <= 0 && !devInvulnerable) endGame(false);
+        }
+    });
+    
+    if (currentBoss && currentBoss.wordBullets) {
+        currentBoss.wordBullets.forEach(w => {
+            w.update(); w.draw();
+            if (w.checkHit(player)) {
+                w.markedForDeletion = true;
+                if (!devInvulnerable) player.hp -= GAME_CONFIG.brainWordDamage;
+                createExplosion(player.x + player.w/2, player.y + player.h/2, '#cc66ff');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 300);
+                playSound('hit');
+                updateUI();
+                if(player.hp <= 0 && !devInvulnerable) endGame(false);
+            }
+        });
+        currentBoss.wordBullets = currentBoss.wordBullets.filter(w => !w.markedForDeletion);
+    }
+    
+    bullets = bullets.filter(b => !b.markedForDeletion);
+    enemyBullets = enemyBullets.filter(b => !b.markedForDeletion);
+    particles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) particles.splice(i, 1); });
+    
+    updateUI();
+    requestAnimationFrame(loop);
+}
+
+// Initialize
+setupMobileControls();
+resize();
+showTitleScreen();
+
+</script>
+</body>
+</html>
