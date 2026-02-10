@@ -1,0 +1,4 @@
+const sarcasticComments = [
+    "Manipulative", "BPD", "Muslims are bad", "Materalistic",
+    "Atheism", "Beards", "No sugar'", "Scam"
+];

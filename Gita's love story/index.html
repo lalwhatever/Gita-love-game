@@ -1,0 +1,307 @@
+﻿<!-- index.html - Auto-detection with manual override -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Valentine Quest for Gita</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a050d;
+            color: #ff66b2;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .subtitle {
+            color: #cc99cc;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .detected-device {
+            background: rgba(255, 102, 178, 0.1);
+            border: 2px solid #ff66b2;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 102, 178, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 102, 178, 0.6); }
+        }
+        
+        .device-icon {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+        
+        .device-text {
+            font-size: 1.3em;
+            color: #fff;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to bottom, #ff66b2, #cc0066);
+            color: white;
+            box-shadow: 0 5px 20px rgba(204, 0, 102, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(204, 0, 102, 0.6);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff99cc;
+            border: 2px solid #ff66b2;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 102, 178, 0.2);
+        }
+        
+        .manual-select {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 102, 178, 0.3);
+        }
+        
+        .manual-select h3 {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .version-cards {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .version-card {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #444;
+            border-radius: 15px;
+            padding: 20px;
+            width: 140px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .version-card:hover {
+            border-color: #ff66b2;
+            transform: translateY(-5px);
+            background: rgba(255, 102, 178, 0.1);
+        }
+        
+        .version-card.active {
+            border-color: #ff66b2;
+            background: rgba(255, 102, 178, 0.2);
+        }
+        
+        .version-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .version-name {
+            font-size: 0.9em;
+            color: #fff;
+        }
+        
+        .auto-redirect {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .countdown {
+            color: #ff66b2;
+            font-weight: bold;
+        }
+        
+        .cancel-auto {
+            color: #ff99cc;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .btn-group {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💝 Valentine Quest</h1>
+        <p class="subtitle">A tale of love, doubt, and perseverance</p>
+        
+        <div class="detected-device" id="detected-device">
+            <div class="device-icon" id="device-icon">📱</div>
+            <div class="device-text" id="device-text">Mobile Device Detected</div>
+        </div>
+        
+        <div class="btn-group">
+            <a href="#" class="btn btn-primary" id="play-btn">Play Now</a>
+            <a href="#" class="btn btn-secondary" id="switch-btn">Switch to Desktop</a>
+        </div>
+        
+        <div class="manual-select">
+            <h3>Or Choose Version Manually</h3>
+            <div class="version-cards">
+                <div class="version-card" onclick="selectVersion('mobile')" id="mobile-card">
+                    <div class="version-icon">📱</div>
+                    <div class="version-name">Mobile<br><small>Touch Controls</small></div>
+                </div>
+                <div class="version-card" onclick="selectVersion('desktop')" id="desktop-card">
+                    <div class="version-icon">💻</div>
+                    <div class="version-name">Desktop<br><small>Keyboard</small></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="auto-redirect" id="auto-redirect">
+            Auto-redirecting in <span class="countdown" id="countdown">5</span>s...
+            <span class="cancel-auto" onclick="cancelAutoRedirect()">Cancel</span>
+        </div>
+    </div>
+
+    <script>
+        // Detection logic
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                || (window.innerWidth <= 768 && 'ontouchstart' in window);
+        }
+        
+        let selectedVersion = isMobile() ? 'mobile' : 'desktop';
+        let autoRedirectTimer = null;
+        let countdownValue = 5;
+        
+        function updateUI() {
+            const deviceIcon = document.getElementById('device-icon');
+            const deviceText = document.getElementById('device-text');
+            const playBtn = document.getElementById('play-btn');
+            const switchBtn = document.getElementById('switch-btn');
+            const mobileCard = document.getElementById('mobile-card');
+            const desktopCard = document.getElementById('desktop-card');
+            
+            // Update cards
+            mobileCard.classList.toggle('active', selectedVersion === 'mobile');
+            desktopCard.classList.toggle('active', selectedVersion === 'desktop');
+            
+            // Update detection display
+            if (selectedVersion === 'mobile') {
+                deviceIcon.textContent = '📱';
+                deviceText.textContent = 'Mobile Version Selected';
+                playBtn.textContent = 'Play Mobile Version';
+                playBtn.href = 'mobile.html';
+                switchBtn.textContent = 'Switch to Desktop';
+                switchBtn.onclick = () => selectVersion('desktop');
+            } else {
+                deviceIcon.textContent = '💻';
+                deviceText.textContent = 'Desktop Version Selected';
+                playBtn.textContent = 'Play Desktop Version';
+                playBtn.href = 'desktop.html';
+                switchBtn.textContent = 'Switch to Mobile';
+                switchBtn.onclick = () => selectVersion('mobile');
+            }
+        }
+        
+        function selectVersion(version) {
+            selectedVersion = version;
+            updateUI();
+            cancelAutoRedirect();
+        }
+        
+        function cancelAutoRedirect() {
+            if (autoRedirectTimer) {
+                clearInterval(autoRedirectTimer);
+                autoRedirectTimer = null;
+                document.getElementById('auto-redirect').style.display = 'none';
+            }
+        }
+        
+        function startAutoRedirect() {
+            const countdownEl = document.getElementById('countdown');
+            
+            autoRedirectTimer = setInterval(() => {
+                countdownValue--;
+                countdownEl.textContent = countdownValue;
+                
+                if (countdownValue <= 0) {
+                    clearInterval(autoRedirectTimer);
+                    window.location.href = selectedVersion === 'mobile' ? 'mobile.html' : 'desktop.html';
+                }
+            }, 1000);
+        }
+        
+        // Initialize
+        updateUI();
+        startAutoRedirect();
+        
+        // Handle resize/orientation changes
+        window.addEventListener('resize', () => {
+            // Optional: Auto-switch detection on resize
+            // Uncomment below to auto-detect on resize (might be annoying)
+            // const newIsMobile = isMobile();
+            // if ((newIsMobile && selectedVersion === 'desktop') || (!newIsMobile && selectedVersion === 'mobile')) {
+            //     selectedVersion = newIsMobile ? 'mobile' : 'desktop';
+            //     updateUI();
+            // }
+        });
+    </script>
+</body>
+</html>
